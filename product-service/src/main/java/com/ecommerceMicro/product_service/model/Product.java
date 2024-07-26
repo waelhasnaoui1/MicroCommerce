@@ -30,6 +30,6 @@ public class Product {
     // Reference to the category ID
     private String categoryId; // Or you can name it category instead of categoryId
 
-
+    private long quantity;
 
 }

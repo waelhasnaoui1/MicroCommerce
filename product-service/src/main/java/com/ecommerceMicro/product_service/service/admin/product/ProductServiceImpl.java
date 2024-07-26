@@ -2,6 +2,7 @@ package com.ecommerceMicro.product_service.service.admin.product;
 
 import com.ecommerceMicro.product_service.dto.ProductRequest;
 import com.ecommerceMicro.product_service.dto.ProductResponse;
+import com.ecommerceMicro.product_service.exceptions.ProductServiceCustomException;
 import com.ecommerceMicro.product_service.model.Product;
 import com.ecommerceMicro.product_service.repository.CategoryRepository;
 import com.ecommerceMicro.product_service.repository.ProductRepository;
@@ -28,13 +29,14 @@ public class ProductServiceImpl implements ProductService {
                 .description(productRequest.description())
                 .price(productRequest.price())
                 .categoryId(productRequest.categoryId()) // Set the category ID
+                .quantity(productRequest.quantity())
                 .build();
 
         productRepository.save(product);
         log.info("Product {} is saved", product.getId());
 
         return new ProductResponse(product.getId(), product.getName(),
-                product.getDescription(), product.getPrice(), product.getCategoryId());
+                product.getDescription(), product.getPrice(), product.getCategoryId(),product.getQuantity());
     }
 
     @Override
@@ -45,7 +47,10 @@ public class ProductServiceImpl implements ProductService {
                         product.getName(),
                         product.getDescription(),
                         product.getPrice(),
-                        product.getCategoryId())) // Include category ID
+                        product.getCategoryId(),
+                        product.getQuantity()
+                )) // Include category ID
+
                 .collect(Collectors.toList());
     }
 
@@ -54,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id).orElse(null);
         if (product != null) {
             return new ProductResponse(product.getId(), product.getName(),
-                    product.getDescription(), product.getPrice(), product.getCategoryId());
+                    product.getDescription(), product.getPrice(), product.getCategoryId(), product.getQuantity());
         }
         return null;
     }
@@ -69,11 +74,53 @@ public class ProductServiceImpl implements ProductService {
                             product.getName(),
                             product.getDescription(),
                             product.getPrice(),
-                            product.getCategoryId()))
+                            product.getCategoryId(),
+                            product.getQuantity()
+                    ))
                     .collect(Collectors.toList());
         } else {
             // Return an empty list if no products are associated with the category
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public void reduceQuantity(String productId, long quantity) {
+
+        log.info("Reduce Quantity {} for id: {}",quantity,productId);
+        Product product = productRepository.findById(productId).orElseThrow(
+                ()-> new ProductServiceCustomException(
+                        "Product with given id not found",
+                        "PRODUCT_NOT_FOUND"
+
+                )
+        );
+
+        if (product.getQuantity() < quantity) {
+            throw new ProductServiceCustomException(
+                    "Product does not have sufficient Quantity",
+                    "INSUFFICIENT_QUANTITY"
+            );
+
+        }
+
+        product.setQuantity(product.getQuantity()-quantity);
+        productRepository.save(product);
+        log.info("Product Quantity updated Successfully");
+
+    }
+
+    @Override
+    public void deleteProductById(String productId) {
+        log.info("Product id: {}",productId);
+        if (!productRepository.existsById(productId)){
+            log.info("Im in this loop {}",!productRepository.existsById(productId));
+            throw new ProductServiceCustomException(
+                    "Product with given id not found",
+                    "PRODUCT_NOT_FOUND"
+            );
+        }
+        log.info("Deleting product with id {} :",productId);
+        productRepository.deleteById(productId);
     }
 }

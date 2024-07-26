@@ -4,7 +4,7 @@ import com.ecommerceMicro.product_service.model.Category;
 
 import java.math.BigDecimal;
 
-public record ProductRequest(String id, String name, String description, BigDecimal price, String categoryId) {
+public record ProductRequest(String id, String name, String description, BigDecimal price, String categoryId,long quantity) {
 
 
 
